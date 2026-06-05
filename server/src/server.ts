@@ -14,6 +14,15 @@ import {
 } from './threads.js';
 import { installSchedule } from './scheduler.js';
 import { attach, killThreadSession, purgeThreadTranscript } from './pty.js';
+import {
+  onAttach,
+  onActivity,
+  onDetach,
+  forgetLive,
+  liveSessions,
+  resourceUsage,
+  startReaper,
+} from './liveSessions.js';
 
 const app = express();
 app.use(express.json());
@@ -56,6 +65,12 @@ app.post('/api/channels/:id/schedule', (req, res) => {
     return;
   }
   res.json({ unit: installSchedule(c, onCalendar, prompt) });
+});
+
+// Live-session status: which Threads are currently Live (tmux session up) plus resource usage.
+// RAM matters on the 8 GB Pi — this is how you see what the idle reaper is bounding (issue #3).
+app.get('/api/status', (_req, res) => {
+  res.json({ liveThreads: liveSessions(), resources: resourceUsage() });
 });
 
 // --- Threads ------------------------------------------------------------------------------------
@@ -142,28 +157,43 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
+  // Mark the Thread Live and reset its idle clock; reaping skips it while an Attachment is open.
+  onAttach(channel, thread);
+
   const term = attach(channel, thread, 80, 24);
   term.onData((d) => {
+    onActivity(thread.id); // PTY output is activity — keeps a busy Thread out of the reaper.
     try { ws.send(d); } catch { /* socket closing */ }
   });
   term.onExit(() => {
+    // tmux session is gone (claude exited / killed): it is no longer Live.
+    forgetLive(thread.id);
     try { ws.close(); } catch { /* already closed */ }
   });
 
   ws.on('message', (raw) => {
     let msg: { type?: string; data?: string; cols?: number; rows?: number };
     try { msg = JSON.parse(raw.toString()); } catch { return; }
-    if (msg.type === 'input' && typeof msg.data === 'string') term.write(msg.data);
-    else if (msg.type === 'resize' && msg.cols && msg.rows) term.resize(msg.cols, msg.rows);
+    if (msg.type === 'input' && typeof msg.data === 'string') {
+      onActivity(thread.id); // user keystrokes are activity too.
+      term.write(msg.data);
+    } else if (msg.type === 'resize' && msg.cols && msg.rows) {
+      term.resize(msg.cols, msg.rows);
+    }
   });
 
-  // Detach the PTY on disconnect but leave the tmux session alive (persistence).
+  // Detach the PTY on disconnect but leave the tmux session alive (persistence). The Thread stays
+  // Live until the reaper kills its idle tmux session (issue #3); we only drop the Attachment.
   ws.on('close', () => {
+    onDetach(thread.id);
     try { term.kill(); } catch { /* already gone */ }
   });
 });
 
 backfillMainThreads();
+
+// Idle reaper: periodically kill the tmux session of Threads idle past the TTL (issue #3).
+startReaper();
 
 server.listen(PORT, BIND_ADDR, () => {
   console.log(`edupudi server → http://${BIND_ADDR}:${PORT}`);
