@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TerminalPane } from './components/TerminalPane';
+import { ScheduleModal } from './components/ScheduleModal';
 import { listChannels, createChannel, type Channel } from './api';
 
 export default function App() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [active, setActive] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState(false);
 
   async function refresh(select?: string) {
     const cs = await listChannels();
@@ -29,16 +31,40 @@ export default function App() {
     }
   }
 
+  const activeChannel = channels.find((c) => c.id === active) ?? null;
+
   return (
     <div className="app">
       <Sidebar channels={channels} active={active} onSelect={setActive} onNew={onNew} />
       <main className="main">
-        {active ? (
-          <TerminalPane key={active} channelId={active} />
+        {activeChannel ? (
+          <div className="channel-view">
+            <header className="channel-head">
+              <span className="channel-title">
+                <span className="hash">#</span>
+                {activeChannel.id}
+              </span>
+              <button
+                className="head-btn"
+                onClick={() => setScheduling(true)}
+                title="Manage this channel's recurring schedule"
+              >
+                Schedule
+              </button>
+            </header>
+            <TerminalPane key={activeChannel.id} channelId={activeChannel.id} />
+          </div>
         ) : (
           <div className="placeholder">Create a channel to begin</div>
         )}
       </main>
+      {scheduling && activeChannel && (
+        <ScheduleModal
+          channelId={activeChannel.id}
+          channelName={activeChannel.id}
+          onClose={() => setScheduling(false)}
+        />
+      )}
     </div>
   );
 }
