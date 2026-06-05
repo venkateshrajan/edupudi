@@ -6,6 +6,14 @@ export interface Channel {
   created_at: number;
 }
 
+/**
+ * Derive a channel slug from a display name.
+ * MUST match the server's slugify in server/src/channels.ts so client-side
+ * duplicate detection lines up with the id the backend will assign.
+ */
+export const slugify = (s: string): string =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
 export async function listChannels(): Promise<Channel[]> {
   const r = await fetch('/api/channels');
   if (!r.ok) throw new Error('failed to load channels');

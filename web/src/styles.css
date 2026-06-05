@@ -157,3 +157,120 @@ body {
   margin: auto;
   color: var(--muted);
 }
+
+/* New-channel modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.modal-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.field-optional {
+  font-style: italic;
+}
+
+.field input,
+.field textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.slug-hint {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.slug-hint-dup {
+  color: #f7768e;
+}
+
+.modal-error {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(247, 118, 142, 0.12);
+  border: 1px solid rgba(247, 118, 142, 0.4);
+  color: #f7768e;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0e14;
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
