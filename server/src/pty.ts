@@ -62,6 +62,10 @@ export function attach(channel: Channel, thread: Thread, cols: number, rows: num
   // (If the tmux session already existed, the trailing command is ignored by tmux and we simply
   // re-attached — but the Thread was already started, so this branch isn't reached then.)
   if (!useResume) markStarted(thread.id);
+  // Re-attaching a Parked Thread (reaped to free RAM, issue #3) revives its tmux session, so it is
+  // Live again. markStarted already set 'live' on the first-launch path; restore it on resume too
+  // so a previously-reaped Thread doesn't stay 'parked' once it's running again.
+  else if (thread.state === 'parked') setThreadState(thread.id, 'live');
 
   return term;
 }
