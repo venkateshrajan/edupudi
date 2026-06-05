@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import '@xterm/xterm/css/xterm.css';
 
 /**
@@ -15,13 +16,21 @@ export function TerminalPane({ channelId }: { channelId: string }) {
     if (!host) return;
 
     const term = new Terminal({
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontFamily:
+        'ui-monospace, SFMono-Regular, Menlo, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", monospace',
       fontSize: 13,
       cursorBlink: true,
+      allowProposedApi: true, // required to switch Unicode width tables
       theme: { background: '#0b0e14', foreground: '#c8d3f5' },
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
+
+    // Unicode 11 width tables: correct rendering of CJK, emoji, and wide/combining glyphs.
+    const unicode11 = new Unicode11Addon();
+    term.loadAddon(unicode11);
+    term.unicode.activeVersion = '11';
+
     term.open(host);
     fit.fit();
 

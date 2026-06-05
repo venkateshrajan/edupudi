@@ -14,15 +14,21 @@ export function sessionName(channel: Channel): string {
  */
 export function attach(channel: Channel, cols: number, rows: number): IPty {
   const name = sessionName(channel);
+  // Force a UTF-8 locale so claude/tmux emit UTF-8; `tmux -u` forces UTF-8 regardless of locale.
+  const env: Record<string, string> = {
+    ...(process.env as Record<string, string>),
+    LANG: process.env.LANG ?? 'C.UTF-8',
+    LC_ALL: process.env.LC_ALL ?? process.env.LANG ?? 'C.UTF-8',
+  };
   return spawn(
     'tmux',
-    ['new-session', '-A', '-s', name, '-c', channel.dir, CLAUDE_BIN],
+    ['-u', 'new-session', '-A', '-s', name, '-c', channel.dir, CLAUDE_BIN],
     {
       name: 'xterm-256color',
       cols,
       rows,
       cwd: channel.dir,
-      env: process.env as Record<string, string>,
+      env,
     },
   );
 }
