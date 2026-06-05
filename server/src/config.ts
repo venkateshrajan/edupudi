@@ -13,3 +13,6 @@ export const DB_PATH =
 
 export const CLAUDE_BIN = process.env.CLAUDE_BIN ?? 'claude';
 export const TMUX_PREFIX = 'edupudi';
+
+// Raised so Claude doesn't auto-purge a Parked Thread's transcript before we resume it (ADR-0004).
+export const CLEANUP_PERIOD_DAYS = Number(process.env.CLEANUP_PERIOD_DAYS ?? 36500);

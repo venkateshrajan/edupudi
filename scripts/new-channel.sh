@@ -18,10 +18,12 @@ mkdir -p "$dir/.claude" "$dir/.memory"
 
 printf '# %s\n\n%s\n' "$name" "$prompt" > "$dir/CLAUDE.md"
 
+# Raise cleanupPeriodDays so Parked Threads' transcripts outlive Claude's 30-day auto-purge (ADR-0004).
 cat > "$dir/.claude/settings.json" <<JSON
 {
   "autoMemoryEnabled": true,
-  "autoMemoryDirectory": "$dir/.memory"
+  "autoMemoryDirectory": "$dir/.memory",
+  "cleanupPeriodDays": 36500
 }
 JSON
 

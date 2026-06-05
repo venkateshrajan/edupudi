@@ -83,6 +83,70 @@ body {
   display: flex;
 }
 
+.channel-view {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.thread-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.thread-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.thread-tab:hover { color: var(--text); }
+.thread-tab.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(122, 162, 247, 0.12);
+}
+
+.thread-tab-label { line-height: 1; }
+
+.thread-tab-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0.6;
+}
+.thread-tab-close:hover { opacity: 1; color: var(--accent); }
+
+.thread-tab-new {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 10px;
+}
+.thread-tab-new:hover { border-color: var(--accent); color: var(--accent); }
+
 .terminal-host {
   flex: 1;
   min-width: 0;
