@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { db } from './db.js';
-import { CHANNELS_ROOT } from './config.js';
+import { CHANNELS_ROOT, CLEANUP_PERIOD_DAYS } from './config.js';
+import { createMainThread, getMainThread } from './threads.js';
 import type { Channel } from './types.js';
 
 const slugify = (s: string) =>
@@ -44,10 +45,20 @@ export function createChannel(input: CreateChannelInput): Channel {
     renderClaudeMd(input.name, input.persona ?? '', input.systemPrompt),
   );
 
-  // 2) per-channel settings: pin auto-memory inside the channel dir for zero ambiguity
+  // 2) per-channel settings: pin auto-memory inside the channel dir for zero ambiguity, and
+  //    raise cleanupPeriodDays so Parked Threads' transcripts outlive Claude's default 30-day
+  //    auto-purge — our Thread rows must not outlive their transcripts (ADR-0004).
   fs.writeFileSync(
     path.join(dir, '.claude', 'settings.json'),
-    JSON.stringify({ autoMemoryEnabled: true, autoMemoryDirectory: memDir }, null, 2),
+    JSON.stringify(
+      {
+        autoMemoryEnabled: true,
+        autoMemoryDirectory: memDir,
+        cleanupPeriodDays: CLEANUP_PERIOD_DAYS,
+      },
+      null,
+      2,
+    ),
   );
 
   // 3) per-channel tools
@@ -69,10 +80,20 @@ export function createChannel(input: CreateChannelInput): Channel {
     'INSERT INTO channels (id, name, persona, dir, created_at) VALUES (?, ?, ?, ?, ?)',
   ).run(channel.id, channel.name, channel.persona, channel.dir, channel.created_at);
 
+  // Every Channel has an undeletable default Thread titled `main`; opening a Channel lands on it.
+  createMainThread(channel.id);
+
   return channel;
 }
 
 function renderClaudeMd(name: string, persona: string, systemPrompt: string): string {
   const head = persona ? `${persona}\n\n` : '';
   return `# ${name}\n\n${head}${systemPrompt}\n`;
+}
+
+/** Trivial startup backfill: ensure every pre-existing Channel has its `main` Thread. */
+export function backfillMainThreads(): void {
+  for (const c of listChannels()) {
+    if (!getMainThread(c.id)) createMainThread(c.id);
+  }
 }

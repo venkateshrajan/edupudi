@@ -8,7 +8,7 @@ import '@xterm/xterm/css/xterm.css';
  * Renders the live Claude Code TUI for a channel by bridging xterm.js to the backend
  * WebSocket, which is wired to a node-pty attached to the channel's tmux session.
  */
-export function TerminalPane({ channelId }: { channelId: string }) {
+export function TerminalPane({ channelId, threadId }: { channelId: string; threadId: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,7 +35,10 @@ export function TerminalPane({ channelId }: { channelId: string }) {
     fit.fit();
 
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}/ws?channel=${encodeURIComponent(channelId)}`);
+    const ws = new WebSocket(
+      `${proto}://${location.host}/ws?channel=${encodeURIComponent(channelId)}` +
+        `&thread=${encodeURIComponent(threadId)}`,
+    );
     ws.binaryType = 'arraybuffer';
 
     const send = (o: unknown) => {
@@ -59,7 +62,7 @@ export function TerminalPane({ channelId }: { channelId: string }) {
       ws.close();
       term.dispose();
     };
-  }, [channelId]);
+  }, [channelId, threadId]);
 
   return <div className="terminal-host" ref={hostRef} />;
 }

@@ -6,10 +6,15 @@ export interface Channel {
   created_at: number;
 }
 
+export type ThreadState = 'live' | 'parked' | 'expired';
+
 export interface Thread {
-  id: string;
+  id: string; // UUID; *is* the Claude session-id (ADR-0002), used for --session-id/--resume
   channel_id: string;
   title: string;
-  session_id: string | null; // claude --resume id, populated after first run
+  started: boolean; // false until first attach launches claude; decides --session-id vs --resume
+  state: ThreadState; // live | parked | expired (lifecycle)
   created_at: number;
 }
+
+export const MAIN_THREAD_TITLE = 'main';
