@@ -90,6 +90,30 @@ body {
   flex-direction: column;
 }
 
+/* Channel header (schedule button lives here) */
+.channel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.channel-title { font-weight: 600; }
+.channel-title .hash { color: var(--muted); margin-right: 4px; }
+
+.head-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+.head-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Thread tabs */
 .thread-tabs {
   display: flex;
   align-items: stretch;
@@ -158,8 +182,9 @@ body {
   color: var(--muted);
 }
 
-/* New-channel modal */
-.modal-overlay {
+/* ---- Shared modal system (used by NewChannelModal and ScheduleModal) ---- */
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
@@ -170,63 +195,88 @@ body {
 }
 
 .modal {
-  width: 440px;
-  max-width: calc(100vw - 32px);
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 20px 22px 18px;
+  padding: 18px 20px 20px;
+  color: var(--text);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
 
+/* New-channel modal title */
 .modal-title {
   margin: 0 0 16px;
   font-size: 16px;
   font-weight: 600;
 }
 
-.field {
+/* Schedule modal head (title + close) */
+.modal-head {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 14px;
 }
+.modal-head h2 { font-size: 16px; margin: 0; font-weight: 600; }
 
-.field-label {
-  font-size: 13px;
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+}
+.icon-btn:hover { color: var(--text); }
+
+/* Form fields (block layout works for both modals) */
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+.field-label,
+.field > span {
+  display: block;
+  font-size: 12px;
   color: var(--muted);
   margin-bottom: 5px;
 }
-
-.field-optional {
-  font-style: italic;
-}
+.field-optional { font-style: italic; }
+.field .row { display: flex; gap: 8px; }
 
 .field input,
+.field select,
 .field textarea {
+  width: 100%;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   padding: 8px 10px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
-  resize: vertical;
 }
+.field textarea { resize: vertical; }
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   outline: none;
   border-color: var(--accent);
 }
+.field .row select { flex: 1; }
+.field .row input[type='time'] { width: auto; flex: 0 0 auto; }
 
+/* New-channel slug hint */
 .slug-hint {
   margin-top: 5px;
   font-size: 12px;
   color: var(--muted);
 }
-.slug-hint-dup {
-  color: #f7768e;
-}
+.slug-hint-dup { color: #f7768e; }
 
+/* Errors */
 .modal-error {
   margin: 0 0 12px;
   padding: 8px 10px;
@@ -236,14 +286,62 @@ body {
   color: #f7768e;
   font-size: 13px;
 }
+.sched-error { color: #f7768e; font-size: 13px; margin-bottom: 12px; }
 
+/* Schedule status + run info */
+.sched-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+.badge.ok { color: #7ee787; border-color: rgba(126, 231, 135, 0.4); }
+.badge.warn { color: #e3b341; border-color: rgba(227, 179, 65, 0.4); }
+.badge.muted { color: var(--muted); }
+
+.sched-expr {
+  font-size: 12px;
+  color: var(--accent);
+  background: rgba(122, 162, 247, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sched-runs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+.sched-runs dt { color: var(--muted); }
+.sched-runs dd { margin: 0; }
+
+.sched-preview {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.sched-preview code { color: var(--accent); }
+
+/* Action row (flex-end + optional .spacer satisfies both modals) */
 .modal-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
 }
+.modal-actions .spacer { flex: 1; }
 
+/* New-channel buttons */
 .btn-primary,
 .btn-secondary {
   border-radius: 6px;
@@ -258,9 +356,7 @@ body {
   color: #0b0e14;
   font-weight: 600;
 }
-.btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-secondary {
   background: transparent;
   color: var(--text);
@@ -274,3 +370,25 @@ body {
   opacity: 0.5;
   cursor: default;
 }
+
+/* Schedule modal buttons */
+.btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 7px 14px;
+  font-size: 13px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0e14;
+  font-weight: 600;
+}
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: #f7768e; border-color: rgba(247, 118, 142, 0.4); }
+.btn.danger:hover { border-color: #f7768e; }

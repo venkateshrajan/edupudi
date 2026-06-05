@@ -12,7 +12,7 @@ import {
   deleteThreadRow,
   isMainThread,
 } from './threads.js';
-import { installSchedule } from './scheduler.js';
+import { installSchedule, removeSchedule, scheduleStatus } from './scheduler.js';
 import { attach, killThreadSession, purgeThreadTranscript } from './pty.js';
 import {
   onAttach,
@@ -53,6 +53,15 @@ app.post('/api/channels', (req, res) => {
   }
 });
 
+app.get('/api/channels/:id/schedule', (req, res) => {
+  const c = getChannel(req.params.id);
+  if (!c) {
+    res.status(404).json({ error: 'not found' });
+    return;
+  }
+  res.json(scheduleStatus(c));
+});
+
 app.post('/api/channels/:id/schedule', (req, res) => {
   const c = getChannel(req.params.id);
   if (!c) {
@@ -64,7 +73,19 @@ app.post('/api/channels/:id/schedule', (req, res) => {
     res.status(400).json({ error: 'onCalendar and prompt are required' });
     return;
   }
-  res.json({ unit: installSchedule(c, onCalendar, prompt) });
+  // Editing reuses install: it overwrites the unit files for this channel's stable unit name.
+  installSchedule(c, onCalendar, prompt);
+  res.json(scheduleStatus(c));
+});
+
+app.delete('/api/channels/:id/schedule', (req, res) => {
+  const c = getChannel(req.params.id);
+  if (!c) {
+    res.status(404).json({ error: 'not found' });
+    return;
+  }
+  removeSchedule(c);
+  res.json(scheduleStatus(c));
 });
 
 // Live-session status: which Threads are currently Live (tmux session up) plus resource usage.

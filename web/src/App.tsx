@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { TerminalPane } from './components/TerminalPane';
 import { ThreadTabs } from './components/ThreadTabs';
 import { NewChannelModal } from './components/NewChannelModal';
+import { ScheduleModal } from './components/ScheduleModal';
 import {
   listChannels,
   listThreads,
@@ -19,6 +20,7 @@ export default function App() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
 
   async function refresh(select?: string) {
     const cs = await listChannels();
@@ -85,6 +87,8 @@ export default function App() {
     }
   }
 
+  const activeChannel = channels.find((c) => c.id === active) ?? null;
+
   return (
     <div className="app">
       <Sidebar
@@ -94,8 +98,21 @@ export default function App() {
         onNew={() => setShowNew(true)}
       />
       <main className="main">
-        {active ? (
+        {activeChannel ? (
           <div className="channel-view">
+            <header className="channel-head">
+              <span className="channel-title">
+                <span className="hash">#</span>
+                {activeChannel.id}
+              </span>
+              <button
+                className="head-btn"
+                onClick={() => setScheduling(true)}
+                title="Manage this channel's recurring schedule"
+              >
+                Schedule
+              </button>
+            </header>
             <ThreadTabs
               threads={threads}
               active={activeThread}
@@ -105,8 +122,8 @@ export default function App() {
             />
             {activeThread ? (
               <TerminalPane
-                key={`${active}:${activeThread}`}
-                channelId={active}
+                key={`${activeChannel.id}:${activeThread}`}
+                channelId={activeChannel.id}
                 threadId={activeThread}
               />
             ) : (
@@ -122,6 +139,13 @@ export default function App() {
           existingIds={channels.map((c) => c.id)}
           onClose={() => setShowNew(false)}
           onCreated={onCreated}
+        />
+      )}
+      {scheduling && activeChannel && (
+        <ScheduleModal
+          channelId={activeChannel.id}
+          channelName={activeChannel.name}
+          onClose={() => setScheduling(false)}
         />
       )}
     </div>
