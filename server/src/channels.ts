@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { CHANNELS_ROOT, CLEANUP_PERIOD_DAYS } from './config.js';
 import { createMainThread, getMainThread } from './threads.js';
+import { installGarden } from './garden.js';
 import type { Channel } from './types.js';
 
 const slugify = (s: string) =>
@@ -31,7 +32,8 @@ export interface CreateChannelInput {
 /**
  * Stamp a fully-isolated channel: directory + CLAUDE.md (system prompt + skill-authoring guidance)
  * + .claude/settings.json (pins per-channel auto-memory + the Skill-usage hook) + the Channel Skill
- * subsystem (`.claude/skills/` + `.claude/skills-archive/`) + optional .mcp.json (tools).
+ * subsystem (`.claude/skills/` + `.claude/skills-archive/`) + optional .mcp.json (tools), then
+ * installs the edupudi-reserved weekly Garden timer (issue #11/ADR-0006) that prunes those skills.
  */
 export function createChannel(input: CreateChannelInput): Channel {
   const id = slugify(input.name);
@@ -110,6 +112,12 @@ export function createChannel(input: CreateChannelInput): Channel {
 
   // Every Channel has an undeletable default Thread titled `main`; opening a Channel lands on it.
   createMainThread(channel.id);
+
+  // Install the edupudi-reserved weekly Channel Skill Garden timer (issue #11, ADR-0006):
+  // `edupudi-garden-<id>`, distinct from the user-schedule unit (issue #5). It fires a headless
+  // `claude -p` pass that gardens this Channel's skills (stale → quarantine → remove). Best-effort
+  // like installSchedule — a dev box without a systemd user bus still gets the unit files written.
+  installGarden(channel);
 
   return channel;
 }
