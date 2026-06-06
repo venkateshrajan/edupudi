@@ -66,5 +66,63 @@ cat > "$dir/.claude/settings.json" <<JSON
 }
 JSON
 
+# Install the edupudi-reserved weekly Channel Skill Garden timer (issue #11, ADR-0006), distinct
+# from the user-schedule unit (edupudi-$slug). It fires a headless `claude -p` Garden pass that
+# marks skills stale → quarantine (move to .claude/skills-archive/) → remove. W1/W2 are guidance.
+unit="edupudi-garden-$slug"
+unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+claude_bin="${CLAUDE_BIN:-claude}"
+stale_days="${GARDEN_STALE_DAYS:-30}"
+remove_days="${GARDEN_REMOVE_DAYS:-30}"
+on_calendar="${GARDEN_ON_CALENDAR:-Mon *-*-* 03:00:00}"
+mkdir -p "$unit_dir"
+
+read -r -d '' garden_prompt <<PROMPT || true
+You are the weekly Channel Skill Garden for this edupudi channel (ADR-0006). Maintain the lifecycle
+of THIS channel's Channel Skills — the skill directories under .claude/skills/ (each is a directory
+containing a SKILL.md). NEVER touch built-in/bundled Claude Code skills: only directories under
+.claude/skills/ (live) and .claude/skills-archive/ (quarantined) are Channel Skills you may garden.
+W1 = $stale_days days (Active -> Stale). W2 = $remove_days days (Quarantined + still unused -> Removed).
+These windows are GUIDANCE — you make the final call. Steps, in order: aggregate
+.claude/skill-usage.jsonl (append-only {skill,ts} per line, ts epoch ms) to per-skill last-used +
+counts (skip torn lines); mark Stale any .claude/skills/ skill unused within W1; QUARANTINE each
+Stale unused skill by moving its dir .claude/skills/<name> -> .claude/skills-archive/<name>; RESTORE
+wrongly-quarantined ones by moving them back; REMOVE (rm -rf) archived skills still unused beyond a
+further W2 (conservative); dedupe/merge near-duplicates and you may propose new skills for recurring
+patterns; then COMPACT .claude/skill-usage.jsonl to at most one {skill,ts} line per still-existing
+skill. Built-in skills have no .claude/skills/ dir, so never quarantine or remove them.
+PROMPT
+
+# Encode the prompt as a JSON string for a safe single-line ExecStart argument.
+garden_prompt_json="$(printf '%s' "$garden_prompt" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "$garden_prompt")"
+
+cat > "$unit_dir/$unit.service" <<SERVICE
+[Unit]
+Description=edupudi scheduled run for $name
+
+[Service]
+Type=oneshot
+WorkingDirectory=$dir
+ExecStart=$claude_bin -p $garden_prompt_json
+SERVICE
+
+cat > "$unit_dir/$unit.timer" <<TIMER
+[Unit]
+Description=edupudi timer for $name
+
+[Timer]
+OnCalendar=$on_calendar
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+TIMER
+
+if systemctl --user daemon-reload 2>/dev/null && systemctl --user enable --now "$unit.timer" 2>/dev/null; then
+  echo "garden timer enabled: $unit.timer"
+else
+  echo "garden timer written but not enabled (enable manually): systemctl --user enable --now $unit.timer" >&2
+fi
+
 echo "created channel '$slug' at $dir"
 echo "open a live session:  tmux new-session -A -s edupudi-$slug -c \"$dir\" claude"

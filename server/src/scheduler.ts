@@ -8,16 +8,31 @@ import type { Channel } from './types.js';
 const USER_UNIT_DIR = path.join(os.homedir(), '.config', 'systemd', 'user');
 
 /**
+ * The systemd unit name for a channel's *user* schedule (issue #5). The edupudi-reserved Garden
+ * pass (issue #11) uses a distinct `edupudi-garden-<id>` unit (see `gardenUnitName`) so the two
+ * never collide: a user can freely set/clear their own schedule without touching gardening.
+ */
+export function userUnitName(channel: Channel): string {
+  return `edupudi-${channel.id}`;
+}
+
+/**
  * Install a per-channel recurring headless job: `claude -p "<prompt>"` in the channel dir.
  * Claude Code has no native cron, so we use a systemd user timer. The job runs in the
  * channel's directory, so it inherits that channel's CLAUDE.md, memory, and tools — a
  * morning run can update the channel's memory that the live session then sees.
  *
  * @param onCalendar systemd OnCalendar expression, e.g. "*-*-* 08:00:00" or "Mon *-*-* 09:00".
+ * @param unit       the systemd unit base name; defaults to this channel's user-schedule unit.
+ *                   The Garden pass (issue #11) passes its own reserved `edupudi-garden-<id>` name.
  */
-export function installSchedule(channel: Channel, onCalendar: string, prompt: string): string {
+export function installSchedule(
+  channel: Channel,
+  onCalendar: string,
+  prompt: string,
+  unit: string = userUnitName(channel),
+): string {
   fs.mkdirSync(USER_UNIT_DIR, { recursive: true });
-  const unit = `edupudi-${channel.id}`;
 
   fs.writeFileSync(
     path.join(USER_UNIT_DIR, `${unit}.service`),
@@ -54,8 +69,7 @@ WantedBy=timers.target
   return unit;
 }
 
-export function removeSchedule(channel: Channel): void {
-  const unit = `edupudi-${channel.id}`;
+export function removeSchedule(channel: Channel, unit: string = userUnitName(channel)): void {
   try {
     execFileSync('systemctl', ['--user', 'disable', '--now', `${unit}.timer`]);
   } catch { /* not enabled */ }
@@ -98,8 +112,10 @@ function query(args: string[]): string | null {
  * Best-effort: if systemctl is unavailable (e.g. dev box without a user bus), installed/
  * onCalendar/prompt are still recovered from the unit files on disk.
  */
-export function scheduleStatus(channel: Channel): ScheduleStatus {
-  const unit = `edupudi-${channel.id}`;
+export function scheduleStatus(
+  channel: Channel,
+  unit: string = userUnitName(channel),
+): ScheduleStatus {
   const timerPath = path.join(USER_UNIT_DIR, `${unit}.timer`);
   const servicePath = path.join(USER_UNIT_DIR, `${unit}.service`);
   const installed = fs.existsSync(timerPath);

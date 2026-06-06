@@ -22,3 +22,14 @@ export const CLEANUP_PERIOD_DAYS = Number(process.env.CLEANUP_PERIOD_DAYS ?? 365
 // Default: 30 minutes. REAP_INTERVAL_MS is how often the reaper evaluates idleness.
 export const IDLE_TTL_MS = Number(process.env.IDLE_TTL_MS ?? 30 * 60 * 1000);
 export const REAP_INTERVAL_MS = Number(process.env.REAP_INTERVAL_MS ?? 60 * 1000);
+
+// Channel Skill gardening (issue #11, ADR-0006). Each Channel gets an edupudi-reserved weekly
+// `edupudi-garden-<channelId>` timer (separate from the user-schedule unit, issue #5) that fires a
+// headless `claude -p` Garden pass. W1/W2 are GUIDANCE handed to the prompt — the AI makes the
+// final lifecycle call (ADR-0006), these are not hard cron thresholds. All overridable via env.
+//   GARDEN_STALE_DAYS  (W1): unused longer than this → Stale → Quarantine candidate. Default 30d.
+//   GARDEN_REMOVE_DAYS (W2): Quarantined + still unused this much longer → Remove. Default 30d.
+//   GARDEN_ON_CALENDAR: systemd OnCalendar cadence for the weekly Garden pass. Default Mon 03:00.
+export const GARDEN_STALE_DAYS = Number(process.env.GARDEN_STALE_DAYS ?? 30);
+export const GARDEN_REMOVE_DAYS = Number(process.env.GARDEN_REMOVE_DAYS ?? 30);
+export const GARDEN_ON_CALENDAR = process.env.GARDEN_ON_CALENDAR ?? 'Mon *-*-* 03:00:00';
