@@ -31,6 +31,19 @@ To kill a Live Thread's process to free RAM, leaving it Parked and resumable. Re
 deletion; deletion destroys a Thread (kills it, removes its transcript) and only ever applies to
 non-`main` Threads.
 
+**Channel Skill**:
+A `SKILL.md` authored by a Channel's own agent under that Channel's `.claude/skills/`, capturing a
+recurring workflow for that Channel. Strictly Channel-scoped. Built-in/bundled Claude Code skills
+are *not* Channel Skills and are never gardened or pruned by edupudi. A Channel Skill is **Active**
+(invoked within the staleness window), **Stale** (a prune candidate), **Quarantined** (disabled but
+recoverable), or **Removed** (`SKILL.md` deleted).
+_Avoid_: "skill" unqualified (collides with Claude Code's built-in skills)
+
+**Garden**:
+The periodic AI-driven review of a Channel's Skills that marks them Active/Stale, Quarantines unused
+ones, restores wrongly-quarantined ones, and may propose new ones. Gardening is to Channel Skills
+what Reaping is to Threads — best-effort housekeeping the AI decides, not a hard deterministic sweep.
+
 ## Relationships
 
 - A **Channel** contains one or more **Threads** — it always has at least one
@@ -39,6 +52,8 @@ non-`main` Threads.
 - A **Thread**'s id is its Claude session-id; it lives in its Channel's directory (so it inherits
   that Channel's persona + memory)
 - An **Attachment** renders exactly one **Thread**; a Thread may have zero or one live Attachment
+- A **Channel** owns zero or more **Channel Skills**; **Garden** moves each between Active → Stale →
+  Quarantined → Removed (Quarantine is reversible; Removal deletes the `SKILL.md`)
 
 ## Example dialogue
 
